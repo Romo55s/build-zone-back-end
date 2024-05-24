@@ -12,7 +12,7 @@ const authController = {
         storeId
       );
       res.status(201).json({ token });
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   },
@@ -22,7 +22,7 @@ const authController = {
       const { username, password } = req.body;
       const token = await authService.login(username, password);
       res.status(200).json({ token });
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   },
