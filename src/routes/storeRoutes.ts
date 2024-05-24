@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get('/:storeName', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
   const storeName = req.params.storeName;
-  const query = 'SELECT store_id, store_name, location, manager_name, host_id FROM store WHERE store_name = ? ALLOW FILTERING';
+  const query = 'SELECT store_id, store_name, location FROM store WHERE store_name = ? ALLOW FILTERING';
   try {
     const result = await client.execute(query, [storeName], { prepare: true });
     if (result.rows.length > 0) {

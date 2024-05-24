@@ -1,8 +1,9 @@
 // src/types/express.d.ts
-import { JwtPayload } from 'jsonwebtoken';
+import { JwtPayload } from "jsonwebtoken";
+import { User } from "../models/userModel";
 
-declare module 'express-serve-static-core' {
+declare module "express-serve-static-core" {
   interface Request {
-    user?: JwtPayload | string;
+    user?: User | JwtPayload | string;
   }
 }
