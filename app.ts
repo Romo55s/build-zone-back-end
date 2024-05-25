@@ -3,13 +3,18 @@ import bodyParser from 'body-parser';
 import authRoutes from './src/routes/authRoutes';
 import storeRoutes from './src/routes/storeRoutes';
 import { authMiddleware } from './src/auth/authMiddleware';
+import sessionConfig from './config/sessionConfig'; 
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 
 app.use(bodyParser.json());
+app.use(sessionConfig); // Esto debería ir antes del middleware de autenticación
 app.use(authMiddleware);
 
-//Routes
+// Routes
 app.use('/auth', authRoutes);
 app.use('/store', storeRoutes);
 
@@ -21,6 +26,11 @@ app.get('/', (req, res) => {
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).send({ error: err.message });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 export default app;

@@ -1,9 +1,28 @@
 import { Request, Response, NextFunction } from "express";
 import authService from "./authService";
 import { User } from "../models/userModel";
+import { client } from "../db"; // Asegúrate de importar tu cliente de base de datos
 
-const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies.access_token;
+const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const publicPaths = ["/auth/login", "/auth/register"];
+  const path = req.path;
+
+  // Si la ruta es pública, continuar con la siguiente middleware
+  if (publicPaths.includes(path)) {
+    return next();
+  }
+  const authHeader = req.headers["authorization"];
+
+  // Validar el formato del token
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(400).json({ error: "Invalid token format" });
+  }
+
+  const token = authHeader.substring(7); 
 
   if (!token) {
     return res.status(403).send("Token is required");
@@ -36,6 +55,8 @@ const authorize = (requiredRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as User; // Ensure user has the expected type
     const requestedStoreId = req.params.storeId; // Assuming store ID is in request parameters
+    
+  
     console.log("User ->", user);
     // If user is admin, allow access
     if (user.role === "admin") {
