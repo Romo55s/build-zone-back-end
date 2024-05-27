@@ -1,6 +1,7 @@
 import express from 'express';
 import client from '../config/cassandra';
 import { authMiddleware, authorize } from '../auth/authMiddleware';
+import authService from '../auth/authService';
 import { Sale } from '../models/salesModel';
 import { types } from 'cassandra-driver';
 
@@ -8,8 +9,9 @@ type Row = types.Row;
 
 const router = express.Router();
 
-router.get('/:storeId/sales', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
-  const storeId = req.params.storeId;
+router.get('/:storeName', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  const storeName = req.params.storeName;
+  const storeId = await authService.getStoreIdByName(storeName);
   const query = 'SELECT sale_id, sale_date, store_id, product_id, quantity, unit_price, total_amount FROM sales WHERE store_id = ? ALLOW FILTERING';
   try {
     const result = await client.execute(query, [storeId], { prepare: true });

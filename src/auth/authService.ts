@@ -4,7 +4,6 @@ import { Client } from "cassandra-driver";
 import { v4 as uuidv4 } from "uuid";
 import jwtConfig from "../config/jwtConfig";
 import client from "../config/cassandra";
-import { TokenManager } from "./tokenManager"; // Importa el módulo singleton
 
 interface AuthService {
   register(
@@ -14,9 +13,8 @@ interface AuthService {
     storeId: string
   ): Promise<string>;
   login(username: string, password: string, role?: string): Promise<string>;
-  verifyToken(token: string): any;
-  isTokenRevoked(token: string): boolean;
-  isTokenExpired(token: string): boolean;
+  getUserByUsername(username: string): Promise<any>;
+  getStoreIdByName(storeName: string): Promise<any>; //
 }
 
 const authService: AuthService = {
@@ -60,26 +58,6 @@ const authService: AuthService = {
     return authToken;
   },
 
-  verifyToken(token) {
-    try {
-      return jwt.verify(token, jwtConfig.secret);
-    } catch (error) {
-      throw new Error("Invalid token");
-    }
-  },
-
-  isTokenRevoked(token) {
-    return TokenManager.isTokenRevoked(token);
-  },
-
-  isTokenExpired(token) {
-    const decoded = jwt.decode(token) as { exp: number };
-    if (!decoded || !decoded.exp) {
-      throw new Error("Invalid token");
-    }
-    return decoded.exp * 1000 < Date.now();
-  },
-
   async getUserByUsername(username: string) {
     const query = "SELECT user_id, username, password, role, store_id FROM users WHERE username = ? ALLOW FILTERING";
     const result = await client.execute(query, [username], { prepare: true });
@@ -88,7 +66,29 @@ const authService: AuthService = {
       throw new Error("User not found");
     }
 
-    return result.rows[0];
+    const user = result.rows[0];
+
+    // Convert UUID buffers to strings
+    user.user_id = user.user_id.toString();
+    user.store_id = user.store_id.toString();
+
+    return user;
+  },
+
+  async getStoreIdByName(storeName: string) {
+    const query = "SELECT store_id FROM store WHERE store_name = ? ALLOW FILTERING";
+    const result = await client.execute(query, [storeName], { prepare: true });
+  
+    if (result.rows.length === 0) {
+      throw new Error("Store not found");
+    }
+  
+    const store = result.rows[0];
+  
+    // Convert UUID buffer to string
+    store.store_id = store.store_id.toString();
+  
+    return store.store_id;
   },
 };
 

@@ -1,14 +1,17 @@
 import express from 'express';
 import client from '../config/cassandra';
 import { authMiddleware, authorize } from '../auth/authMiddleware';
+import authService from '../auth/authService';
 import { ProductStore } from '../models/productStoreModel';
 import { types } from 'cassandra-driver';
 
 type Row = types.Row;
+
 const router = express.Router();
 
-router.get('/:storeId/products', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
-  const storeId = req.params.storeId;
+router.get('/:storeName', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  const storeName = req.params.storeName;
+  const storeId = await authService.getStoreIdByName(storeName);
   const query = 'SELECT product_id, store_id, product_name, category, price, stock, supplier FROM productstore WHERE store_id = ? ALLOW FILTERING';
   try {
     const result = await client.execute(query, [storeId], { prepare: true });
