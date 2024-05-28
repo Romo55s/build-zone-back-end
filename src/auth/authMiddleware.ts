@@ -67,7 +67,6 @@ const authorize = (requiredRoles: string[]) => {
     
     // If user is manager, verify if requested store ID matches user's store ID
     if (user.role === "manager" && user.store_id === requestedStoreId) {
-      console.log("Store id-> ", user.store_id);
       return next();
     }
 
