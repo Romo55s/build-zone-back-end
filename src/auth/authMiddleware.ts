@@ -53,13 +53,13 @@ const authorize = (requiredRoles: string[]) => {
     const user = req.user as User; // Ensure user has the expected type
     const storeName = req.params.storeName;
     const requestedStoreId = await authService.getStoreIdByName(storeName);
-
+    
     if(!req.cookies.user){
       return res.status(403).json({ error: "Error User Logout" });
     }
 
     user.store_id = req.cookies.user.store_id;
-    console.log("User ->", user);
+    
     // If user is admin, allow access
     if (user.role === "admin") {
       return next();
