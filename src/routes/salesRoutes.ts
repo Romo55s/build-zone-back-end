@@ -12,6 +12,9 @@ const router = express.Router();
 router.get('/:storeName', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
   const storeName = req.params.storeName;
   const storeId = await authService.getStoreIdByName(storeName);
+  if(!storeId){
+    return res.status(404).send({ error: 'User not found' });
+  }
   const query = 'SELECT sale_id, sale_date, store_id, product_id, quantity, unit_price, total_amount FROM sales WHERE store_id = ? ALLOW FILTERING';
   try {
     const result = await client.execute(query, [storeId], { prepare: true });

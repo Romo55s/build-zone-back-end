@@ -3,6 +3,7 @@ import client from '../config/cassandra';
 import { authMiddleware, authorize } from '../auth/authMiddleware';
 import { Store } from '../models/storeModel';
 import { types } from 'cassandra-driver';
+import authService from '../auth/authService';
 
 type Row = types.Row;
 
@@ -22,7 +23,7 @@ router.get('/:storeName', authMiddleware, authorize(['admin', 'manager']), async
       };
       res.json(store);
     } else {
-      res.status(404).json({ error: 'Store not found' });
+      throw new Error('Store not found');
     }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
