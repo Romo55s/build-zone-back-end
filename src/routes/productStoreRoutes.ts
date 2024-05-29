@@ -30,4 +30,61 @@ router.get('/:storeName', authMiddleware, authorize(['admin', 'manager']), async
   }
 });
 
+function extractDriveImageId(imageLink: string) {
+  const regex = /(?:id=)([^\&]+)/;
+  const match = imageLink.match(regex);
+  if (match && match[1]) {
+    return match[1];
+  } else {
+    throw new Error("No se pudo extraer la ID de la imagen de Google Drive.");
+  }
+}
+
+// Función para validar el formato del enlace de la imagen de Google Drive
+function validateImageLink(imageLink: string) {
+  const regex = /^https:\/\/drive\.google\.com\/thumbnail\?id=.+$/;
+  return regex.test(imageLink);
+}
+
+// Agregar un nuevo producto a la tienda
+router.post('/', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  try {
+    const { storeName, product } = req.body;
+    const storeId = await authService.getStoreIdByName(storeName);
+    const { category, image, price, product_name, stock, supplier } = product;
+
+    // Validar el enlace de la imagen antes de agregar el producto
+    if (!validateImageLink(image)) {
+      throw new Error("El enlace de la imagen no es válido.");
+    }
+
+    const imageId = extractDriveImageId(image);
+    const query = 'INSERT INTO productstore (store_id, product_id, category, image, price, product_name, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    await client.execute(query, [storeId, imageId, category, image, price, product_name, stock, supplier], { prepare: true });
+    res.status(201).send("Producto agregado exitosamente.");
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Actualizar un producto existente en la tienda
+router.put('/:productId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { category, image, price, product_name, stock, supplier } = req.body;
+
+    // Validar el enlace de la imagen antes de actualizar el producto
+    if (image && !validateImageLink(image)) {
+      throw new Error("El enlace de la imagen no es válido.");
+    }
+
+    const imageId = extractDriveImageId(image);
+    const query = 'UPDATE productstore SET category = ?, image = ?, price = ?, product_name = ?, stock = ?, supplier = ? WHERE product_id = ?';
+    await client.execute(query, [category, image, price, product_name, stock, supplier, productId], { prepare: true });
+    res.send("Producto actualizado exitosamente.");
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
