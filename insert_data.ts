@@ -19,18 +19,18 @@ const client = new Client({
 
 // Definir los UUIDs manualmente para asegurarnos de la consistencia
 const stores = [
-    { id: uuidv4(), location: '1234 Calle Santa Ana #553, Ciudad de México', name: 'build-zone-cdmx', userId: uuidv4() },
-    { id: uuidv4(), location: '5678 Calle Chapalita #202, Guadalajara', name: 'build-zone-gdl', userId: uuidv4() },
-    { id: uuidv4(), location: '9101 Calle San Pedro #532, Monterrey', name: 'build-zone-mty', userId: uuidv4() },
-    { id: uuidv4(), location: '1213 Calle El charro #102, Aguascalientes', name: 'build-zone-ags', userId: uuidv4() }
+    { id: uuidv4(), location: '1234 Calle Santa Ana #553, Ciudad de México', name: 'build-zone-cdmx' },
+    { id: uuidv4(), location: '5678 Calle Chapalita #202, Guadalajara', name: 'build-zone-gdl' },
+    { id: uuidv4(), location: '9101 Calle San Pedro #532, Monterrey', name: 'build-zone-mty' },
+    { id: uuidv4(), location: '1213 Calle El charro #102, Aguascalientes', name: 'build-zone-ags' }
 ];
 
 const users = [
-    { username: 'admin', password: 'securepassword', role: 'admin', storeId: null, userId: '123e4567-e89b-12d3-a456-426614174104' },
-    { username: 'mauricio-torres', password: 'managerpassword1', role: 'manager', storeId: stores[0].id, userId: stores[0].userId },
-    { username: 'enrique-torres', password: 'managerpassword2', role: 'manager', storeId: stores[1].id, userId: stores[1].userId },
-    { username: 'christopher-perez', password: 'managerpassword3', role: 'manager', storeId: stores[2].id, userId: stores[2].userId },
-    { username: 'miguel-perez', password: 'managerpassword4', role: 'manager', storeId: stores[3].id, userId: stores[3].userId }
+    { username: 'admin', password: 'securepassword', role: 'admin', storeId: null, userId: uuidv4() },
+    { username: 'mauricio-torres', password: 'managerpassword1', role: 'manager', storeId: stores[0].id, userId: uuidv4() },
+    { username: 'enrique-torres', password: 'managerpassword2', role: 'manager', storeId: stores[1].id, userId: uuidv4() },
+    { username: 'christopher-perez', password: 'managerpassword3', role: 'manager', storeId: stores[2].id, userId: uuidv4() },
+    { username: 'miguel-perez', password: 'managerpassword4', role: 'manager', storeId: stores[3].id, userId: uuidv4() }
 ];
 
 const imageUrls = {
@@ -192,8 +192,8 @@ async function insertData() {
 
         // Insertar tiendas
         for (const store of stores) {
-            const query = 'INSERT INTO build_zone.store (store_id, location, store_name, user_id) VALUES (?, ?, ?, ?)';
-            await client.execute(query, [store.id, store.location, store.name, store.userId], { prepare: true });
+            const query = 'INSERT INTO build_zone.store (store_id, location, store_name) VALUES (?, ?, ?)';
+            await client.execute(query, [store.id, store.location, store.name], { prepare: true });
         }
 
         // Insertar usuarios
