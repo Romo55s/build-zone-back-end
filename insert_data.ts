@@ -26,7 +26,7 @@ const stores = [
 ];
 
 const users = [
-    { username: 'admin', password: 'securepassword', role: 'admin', storeId: null, userId: uuidv4() },
+    { username: 'admin', password: 'securepassword', role: 'admin', storeId: uuidv4(), userId: uuidv4() },
     { username: 'mauricio-torres', password: 'managerpassword1', role: 'manager', storeId: stores[0].id, userId: uuidv4() },
     { username: 'enrique-torres', password: 'managerpassword2', role: 'manager', storeId: stores[1].id, userId: uuidv4() },
     { username: 'christopher-perez', password: 'managerpassword3', role: 'manager', storeId: stores[2].id, userId: uuidv4() },
@@ -202,6 +202,11 @@ async function insertData() {
             const query = 'INSERT INTO build_zone.users (username, password, role, store_id, user_id) VALUES (?, ?, ?, ?, ?)';
             await client.execute(query, [user.username, hashedPassword, user.role, user.storeId, user.userId], { prepare: true });
         }
+
+        //Consulta
+        const query = 'SELECT * FROM build_zone.store';
+        const result = await client.execute(query, [], { prepare: true });
+        console.log('Data:', result.rows);
 
         // Insertar productos
         for (const product of products) {

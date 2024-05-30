@@ -9,9 +9,8 @@ type Row = types.Row;
 const router = express.Router();
 
 // Obtener todas las tiendas
-// Obtener todas las tiendas
-router.get('/all', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
-  const query = 'SELECT * FROM store';
+router.get('/all', authMiddleware, authorize(['admin']), async (req, res) => {
+  const query = 'SELECT store_id, store_name, location FROM store';
   try {
     const result = await client.execute(query);
     const stores: Store[] = result.rows.map((row: Row) => ({
@@ -50,16 +49,18 @@ router.get('/bystore/:storeName', authMiddleware, authorize(['admin', 'manager']
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
-});
+}); 
 
 
 // Crear una nueva tienda
 router.post('/add', authMiddleware, authorize(['admin']), async (req, res) => {
   const { store_name, location } = req.body;
+  
   if (!store_name || !location) {
     return res.status(400).json({ error: 'store_name and location are required' });
   }
   const store_id = types.Uuid.random();
+  
   const query = 'INSERT INTO store (store_id, store_name, location) VALUES (?, ?, ?)';
   try {
     await client.execute(query, [store_id, store_name, location], { prepare: true });
