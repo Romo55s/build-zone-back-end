@@ -203,10 +203,7 @@ async function insertData() {
             await client.execute(query, [user.username, hashedPassword, user.role, user.storeId, user.userId], { prepare: true });
         }
 
-        //Consulta
-        const query = 'SELECT * FROM build_zone.store';
-        const result = await client.execute(query, [], { prepare: true });
-        console.log('Data:', result.rows);
+
 
         // Insertar productos
         for (const product of products) {

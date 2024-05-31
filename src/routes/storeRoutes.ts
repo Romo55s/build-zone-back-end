@@ -32,10 +32,8 @@ router.get('/exists/:storeId', authMiddleware, authorize(['admin']), async (req,
   try {
     const result = await client.execute(query, [req.params.storeId], { prepare: true });
     if (result.rows.length > 0) {
-      console.log(result);
       res.status(200).json({ exists: true });
     } else {
-      console.log(result);
       res.status(404).json({ exists: false });
     }
   } catch (error: any) {

@@ -12,7 +12,6 @@ import cookieParser from 'cookie-parser';
 
 dotenv.config();
 const app = express();
-
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(authMiddleware);

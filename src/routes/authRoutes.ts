@@ -25,8 +25,7 @@ router.post(
       const token = await authService.login(username, password);
       const user = await authService.getUserByUsername(username);
       
-      res.cookie('user', user);
-      res.cookie('access_token', token, {
+      res.cookie('access_token', { token, user }, {
         httpOnly: true
       });
       res.status(200).json({ username: user.username, token });
