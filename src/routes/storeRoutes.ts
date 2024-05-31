@@ -4,6 +4,7 @@ import { authMiddleware, authorize } from '../auth/authMiddleware';
 import { Store } from '../models/storeModel';
 import { types } from 'cassandra-driver';
 
+
 type Row = types.Row;
 
 const router = express.Router();
@@ -25,7 +26,22 @@ router.get('/all', authMiddleware, authorize(['admin']), async (req, res) => {
   }
 });
 
-
+// Verificar si existe una tienda
+router.get('/exists/:storeId', authMiddleware, authorize(['admin']), async (req, res) => {
+  const query = 'SELECT store_id FROM store WHERE store_id = ?';
+  try {
+    const result = await client.execute(query, [req.params.storeId], { prepare: true });
+    if (result.rows.length > 0) {
+      console.log(result);
+      res.status(200).json({ exists: true });
+    } else {
+      console.log(result);
+      res.status(404).json({ exists: false });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Obtener una tienda por nombre
 router.get('/bystore/:storeName', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {

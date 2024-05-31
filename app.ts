@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import authRoutes from './src/routes/authRoutes';
 import storeRoutes from './src/routes/storeRoutes';
 import salesRoutes from './src/routes/salesRoutes';
+import userRoutes from './src/routes/userRoutes';
 import productRoutes from './src/routes/productStoreRoutes';
 import { authMiddleware } from './src/auth/authMiddleware';
 import dotenv from 'dotenv';
@@ -18,6 +19,7 @@ app.use(authMiddleware);
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/user', userRoutes);	
 app.use('/store', storeRoutes);
 app.use('/sales', salesRoutes);
 app.use('/products', productRoutes);
