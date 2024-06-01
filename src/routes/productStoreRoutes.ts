@@ -87,4 +87,34 @@ router.put('/:productId', authMiddleware, authorize(['admin', 'manager']), async
   }
 });
 
+//Eliminar un producto
+router.delete('/:productId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  try{
+    const {productId} = req.params;
+    const query = "DELETE FROM productstore WHERE product_id = ?";
+    await client.execute(query, [productId], {prepare: true});
+    res.send("Producto eliminado exitosamente");
+  }catch(error: any){
+    res.status(500).json({error:error.message});
+  }
+});
+  //Obtener todos los productos
+
+  router.get('/:productId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const query = 'SELECT * FROM productstore WHERE product_id = ?';
+      const result = await client.execute(query, [productId], { prepare: true });
+  
+      if (result.rowLength === 0) {
+        return res.status(404).json({ error: "Producto no encontrado" });
+      }
+  
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  
+  });
+
 export default router;
