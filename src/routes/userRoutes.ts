@@ -66,7 +66,7 @@ router.post("/add", authMiddleware, authorize(["admin"]), async (req, res) => {
 
 // Leer un usuario
 router.get(
-  "/:userId",
+  "/userById/:userId",
   authMiddleware,
   authorize(["admin"]),
   async (req, res) => {
