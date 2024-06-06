@@ -127,4 +127,25 @@ router.delete(
   }
 );
 
+//Obtener usuario por storeId
+router.get("/getUsersByStore/:storeId",authMiddleware,authorize(["admin", "manager"]),
+  async (req, res) => {
+    const storeId = req.params.storeId;
+    const query =
+      "SELECT user_id, store_id, username, role FROM users WHERE store_id = ? ALLOW FILTERING";
+    try {
+      const result = await client.execute(query, [storeId], { prepare: true });
+      const users = result.rows.map((row: types.Row) => ({
+        user_id: row.user_id,
+        store_id: row.store_id,
+        username: row.username,
+        role: row.role,
+      }));
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
 export default router;
