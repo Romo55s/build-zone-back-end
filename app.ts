@@ -8,17 +8,18 @@ import productRoutes from './src/routes/productStoreRoutes';
 import { authMiddleware } from './src/auth/authMiddleware';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-
+import cors from 'cors';
 
 dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(cors());
 app.use(authMiddleware);
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/user', userRoutes);	
+app.use('/user', userRoutes);    
 app.use('/store', storeRoutes);
 app.use('/sales', salesRoutes);
 app.use('/products', productRoutes);
