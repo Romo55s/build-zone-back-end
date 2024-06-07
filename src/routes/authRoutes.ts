@@ -1,4 +1,3 @@
-// src/routes/authRoutes.ts
 import { Router, Request, Response, NextFunction } from "express";
 import authService from "../auth/authService";
 
@@ -9,9 +8,9 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { username, password, role, storeId } = req.body;
-      await authService.register(username, password, role, storeId);
-      res.status(201).json({ message: "Successfully registered" });
-    } catch (error: any) {
+      const result = await authService.register(username, password, role, storeId);
+      res.status(result.status).json({ message: result.message });
+    } catch (error: unknown) {
       next(error);
     }
   }
@@ -22,14 +21,23 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { username, password } = req.body;
-      const token = await authService.login(username, password);
-      const user = await authService.getUserByUsername(username);
-      
-      res.cookie('access_token', { token, user }, {
-        httpOnly: true
-      });
-      res.status(200).json({ username: user.username, token });
-    } catch (error: any) {
+      const result = await authService.login(username, password);
+
+      if (result.status === 200 && result.authToken) {
+        const userResult = await authService.getUserByUsername(username);
+
+        if (userResult.status === 200 && userResult.user) {
+          res.cookie('access_token', { token: result.authToken, user: userResult.user }, {
+            httpOnly: true
+          });
+          res.status(200).json({ username: userResult.user.username, token: result.authToken });
+        } else {
+          res.status(userResult.status).json({ message: userResult.message });
+        }
+      } else {
+        res.status(result.status).json({ message: result.message });
+      }
+    } catch (error: unknown) {
       next(error);
     }
   }

@@ -11,84 +11,104 @@ interface AuthService {
     password: string,
     role: string,
     storeId: string
-  ): Promise<string>;
-  login(username: string, password: string, role?: string): Promise<string>;
-  getUserByUsername(username: string): Promise<any>;
-  getStoreIdByName(storeName: string): Promise<any>; //
+  ): Promise<{ status: number, message: string }>;
+  login(username: string, password: string): Promise<{ status: number, message: string, authToken?: string }>;
+  getUserByUsername(username: string): Promise<{ status: number, message: string, user?: any }>;
+  getStoreIdByName(storeName: string): Promise<{ status: number, message: string, storeId?: string }>;
 }
 
 const authService: AuthService = {
-  async register(username, password, role, storeId) {
-    const userId = uuidv4();
-    const hashedPassword = await bcrypt.hash(password, 10);
+  async register(username: string, password: string, role: string, storeId: string) {
+    try {
+      const userId = uuidv4();
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-    const query =
-      "INSERT INTO users (user_id, store_id, username, password, role) VALUES (?, ?, ?, ?, ?)";
-    await client.execute(
-      query,
-      [userId, storeId, username, hashedPassword, role],
-      { prepare: true }
-    );
+      const query =
+        "INSERT INTO users (user_id, store_id, username, password, role) VALUES (?, ?, ?, ?, ?)";
+      await client.execute(
+        query,
+        [userId, storeId, username, hashedPassword, role],
+        { prepare: true }
+      );
 
-    return "Successfully register";
+      return { status: 200, message: "Successfully registered" };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return { status: 500, message: `Registration failed: ${errorMessage}` };
+    }
   },
 
-  async login(username: string, password: string): Promise<string> {
-    const query =
-      "SELECT user_id, username, password, role, store_id FROM users WHERE username = ? ALLOW FILTERING";
-    const result = await client.execute(query, [username], { prepare: true });
+  async login(username: string, password: string): Promise<{ status: number, message: string, authToken?: string }> {
+    try {
+      const query =
+        "SELECT user_id, username, password, role, store_id FROM users WHERE username = ? ALLOW FILTERING";
+      const result = await client.execute(query, [username], { prepare: true });
 
-    if (result.rows.length === 0) {
-      throw new Error("User not found");
+      if (result.rows.length === 0) {
+        return { status: 404, message: "User not found" };
+      }
+
+      const user = result.rows[0];
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        return { status: 401, message: "Invalid password" };
+      }
+
+      const authToken = jwt.sign(
+        { username, role: user.role },
+        jwtConfig.secret,
+        { expiresIn: jwtConfig.expiresIn }
+      );
+
+      return { status: 200, message: "Login successful", authToken };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return { status: 500, message: `Login failed: ${errorMessage}` };
     }
-
-    const user = result.rows[0];
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new Error("Invalid password");
-    }
-
-    const authToken = jwt.sign(
-      { username, password, role: user.role },
-      jwtConfig.secret,
-      { expiresIn: jwtConfig.expiresIn }
-    );
-
-    return authToken;
   },
 
   async getUserByUsername(username: string) {
-    const query = "SELECT user_id, username, password, role, store_id FROM users WHERE username = ? ALLOW FILTERING";
-    const result = await client.execute(query, [username], { prepare: true });
+    try {
+      const query = "SELECT user_id, username, password, role, store_id FROM users WHERE username = ? ALLOW FILTERING";
+      const result = await client.execute(query, [username], { prepare: true });
 
-    if (result.rows.length === 0) {
-      throw new Error("User not found");
+      if (result.rows.length === 0) {
+        return { status: 404, message: "User not found" };
+      }
+
+      const user = result.rows[0];
+
+      // Convert UUID buffers to strings
+      user.user_id = user.user_id.toString();
+      user.store_id = user.store_id.toString();
+
+      return { status: 200, message: "User found", user };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return { status: 500, message: `Failed to retrieve user: ${errorMessage}` };
     }
-
-    const user = result.rows[0];
-
-    // Convert UUID buffers to strings
-    user.user_id = user.user_id.toString();
-    user.store_id = user.store_id.toString();
-
-    return user;
   },
 
   async getStoreIdByName(storeName: string) {
-    const query = "SELECT store_id FROM store WHERE store_name = ? ALLOW FILTERING";
-    const result = await client.execute(query, [storeName], { prepare: true });
-  
-    if (result.rows.length === 0) {
-      throw new Error("Store not found");
+    try {
+      const query = "SELECT store_id FROM store WHERE store_name = ? ALLOW FILTERING";
+      const result = await client.execute(query, [storeName], { prepare: true });
+
+      if (result.rows.length === 0) {
+        return { status: 404, message: "Store not found" };
+      }
+
+      const store = result.rows[0];
+
+      // Convert UUID buffer to string
+      store.store_id = store.store_id.toString();
+
+      return { status: 200, message: "Store found", storeId: store.store_id };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return { status: 500, message: `Failed to retrieve store: ${errorMessage}` };
     }
-  
-    const store = result.rows[0];
-  
-    // Convert UUID buffer to string
-    store.store_id = store.store_id.toString();
-  
-    return store.store_id;
   },
 };
 
