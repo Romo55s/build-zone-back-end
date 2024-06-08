@@ -6,11 +6,11 @@ import { types } from 'cassandra-driver';
 const router = express.Router();
 
 // Obtener una venta por su ID
-router.get('/getbyId/:saleId/:saleDate/:storeId/:productId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
-  const { saleId, saleDate, storeId, productId } = req.params;
-  const query = 'SELECT * FROM sales WHERE sale_id = ? AND sale_date = ? AND store_id = ? AND product_id = ?';
+router.get('/getById/:saleId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  const { saleId } = req.params;
+  const query = 'SELECT * FROM sales WHERE sale_id = ?';
   try {
-    const result = await client.execute(query, [saleId, saleDate, storeId, productId], { prepare: true });
+    const result = await client.execute(query, [saleId], { prepare: true });
     const sale = result.rows[0];
     res.json(sale);
   } catch (error: any) {
