@@ -14,7 +14,10 @@ dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200',
+  credentials: true
+}));
 app.use(authMiddleware);
 
 // Routes

@@ -10,12 +10,11 @@ type Row = types.Row;
 const router = express.Router();
 
 router.get(
-  "getByStoreName/:storeName",
+  "/getByStoreId/:storeId",
   authMiddleware,
   authorize(["admin", "manager"]),
   async (req, res) => {
-    const storeName = req.params.storeName;
-    const storeId = await authService.getStoreIdByName(storeName);
+    const storeId = req.params.storeId;
     const query =
       "SELECT product_id, store_id, product_name, category, price, stock, supplier FROM productstore WHERE store_id = ? ALLOW FILTERING";
     try {
@@ -59,8 +58,8 @@ router.post(
   authorize(["admin", "manager"]),
   async (req, res) => {
     try {
-      const { storeName, product } = req.body;
-      const storeId = await authService.getStoreIdByName(storeName);
+      const { store_id, product } = req.body;
+      const storeId = await authService.getStoreById(store_id);
       const { category, image, price, product_name, stock, supplier } = product;
 
       // Validar el enlace de la imagen antes de agregar el producto

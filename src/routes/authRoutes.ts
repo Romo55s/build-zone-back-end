@@ -30,7 +30,7 @@ router.post(
           res.cookie('access_token', { token: result.authToken, user: userResult.user }, {
             httpOnly: true
           });
-          res.status(200).json({ username: userResult.user.username, token: result.authToken });
+          res.status(200).json({ token: result.authToken, user: userResult.user });
         } else {
           res.status(userResult.status).json({ message: userResult.message });
         }

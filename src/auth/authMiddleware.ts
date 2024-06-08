@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import authService from "./authService";
 import { User } from "../models/userModel";
 import jwt from "jsonwebtoken";
+import jwtConfig from "../config/jwtConfig";
 
 const authMiddleware = async (
   req: Request,
@@ -51,16 +52,23 @@ const authMiddleware = async (
   }
 };
 
+interface ITokenPayload {
+  username: string;
+  role: string;
+  user_id: string;
+  store_id: string;
+}
+
 const authorize = (requiredRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (
-      req.cookies.access_token &&
-      req.cookies.access_token.user &&
-      req.cookies.access_token.token
-    ) {
-      const { user, token } = req.cookies.access_token; // Extract user and token from access_token cookie
+    const authHeader = req.headers.authorization;
 
-      if (user && user.store_id) {
+    if (authHeader) {
+      const token = authHeader.split(" ")[1]; // Extract token from Bearer
+      const { username, role, user_id, store_id } = jwt.verify(token, jwtConfig.secret) as ITokenPayload;
+      
+      const user = { username, role, user_id, store_id };
+      if (user && user.user_id) {
         req.user = user; // Attach user to request object
       } else {
         return res.status(403).json({ error: "Invalid user" });
@@ -71,27 +79,24 @@ const authorize = (requiredRoles: string[]) => {
         return next();
       }
 
-      // If user is manager, check storeName
+      // If user is manager, check store_id
       if (user.role === "manager") {
-        const storeName = req.params.storeName;
-
-        // If storeName is not provided, deny access
-        if (!storeName) {
-          return res.status(403).json({ error: "Store name is required" });
+        const store_id = req.params.storeId;
+        // If store_id is not provided, deny access
+        if (!store_id) {
+          return res.status(403).json({ error: "Store ID is required" });
         }
-
-        const requestedStoreId = await authService.getStoreIdByName(storeName);
-
+        const requestedStoreId = await authService.getStoreById(store_id);
         // If store_id matches, allow access
-        if (user.store_id === requestedStoreId) {
+        if (user.store_id === requestedStoreId.storeId) {
           return next();
         }
       }
 
       // If user does not have required role or store_id does not match, deny access
       res.status(403).json({ error: "Forbidden" });
-    }else{
-      return res.status(403).json({ error: "Invalid Cookies" });
+    } else {
+      return res.status(403).json({ error: "No token provided" });
     }
   };
 };
