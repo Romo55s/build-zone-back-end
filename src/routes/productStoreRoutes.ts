@@ -16,7 +16,7 @@ router.get(
   async (req, res) => {
     const storeId = req.params.storeId;
     const query =
-      "SELECT product_id, store_id, product_name, category, price, stock, supplier FROM productstore WHERE store_id = ? ALLOW FILTERING";
+      "SELECT product_id, store_id, product_name, category, image, price, stock, supplier FROM productstore WHERE store_id = ? ALLOW FILTERING";
     try {
       const result = await client.execute(query, [storeId], { prepare: true });
       const products: ProductStore[] = result.rows.map((row: Row) => ({
@@ -24,6 +24,7 @@ router.get(
         store_id: row.store_id,
         product_name: row.product_name,
         category: row.category,
+        image: row.image,
         price: row.price,
         stock: row.stock,
         supplier: row.supplier,
@@ -74,7 +75,6 @@ router.post(
         query,
         [
           storeId,
-          imageId,
           category,
           image,
           price,

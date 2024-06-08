@@ -8,7 +8,7 @@ const router = express.Router();
 // Obtener una venta por su ID
 router.get('/getById/:saleId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
   const { saleId } = req.params;
-  const query = 'SELECT * FROM sales WHERE sale_id = ?';
+  const query = 'SELECT * FROM sales WHERE sale_id = ? ALLOW FILTERING';
   try {
     const result = await client.execute(query, [saleId], { prepare: true });
     const sale = result.rows[0];
@@ -33,7 +33,7 @@ router.get('/getAll', authMiddleware, authorize(['admin', 'manager']), async (re
 // Obtener todas las ventas de una tienda
 router.get('/getByStore/:storeId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
   const { storeId } = req.params;
-  const query = 'SELECT * FROM sales WHERE store_id = ?';
+  const query = 'SELECT * FROM sales WHERE store_id = ? ALLOW FILTERING';
   try {
     const result = await client.execute(query, [storeId], { prepare: true });
     const sales = result.rows;
@@ -66,12 +66,12 @@ router.post('/add', authMiddleware, authorize(['admin', 'manager']), async (req,
   }
 });
 
-// Eliminar una venta por su ID
-router.delete('/delete/:saleId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
-  const { saleId } = req.params;
-  const queryDeleteSale = 'DELETE FROM sales WHERE sale_id = ?';
+// Eliminar una venta
+router.delete('/delete/:saleId/:saleDate/:storeId/:productId', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
+  const { saleId, saleDate, storeId, productId } = req.params;
+  const queryDeleteSale = 'DELETE FROM sales WHERE sale_id = ? AND sale_date = ? AND store_id = ? AND product_id = ?';
   try {
-    await client.execute(queryDeleteSale, [saleId], { prepare: true });
+    await client.execute(queryDeleteSale, [saleId, saleDate, storeId, productId], { prepare: true });
     res.json({ message: 'Sale deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
