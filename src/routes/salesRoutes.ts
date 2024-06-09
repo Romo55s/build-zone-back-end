@@ -45,23 +45,24 @@ router.get('/getByStore/:storeId', authMiddleware, authorize(['admin', 'manager'
 
 // Agregar una nueva venta
 router.post('/add', authMiddleware, authorize(['admin', 'manager']), async (req, res) => {
-  const { saleDate, storeId, productId, quantity } = req.body;
+  const { sale_date, store_id, product_id, quantity } = req.body;
   const saleId = types.Uuid.random();
   const queryGetProduct = 'SELECT stock, price FROM productstore WHERE store_id = ? AND product_id = ?';
   const queryInsertSale = 'INSERT INTO sales (sale_id, sale_date, store_id, product_id, quantity, unit_price, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)';
   const queryUpdateProduct = 'UPDATE productstore SET stock = ? WHERE store_id = ? AND product_id = ?';
   try {
-    const product = await client.execute(queryGetProduct, [storeId, productId], { prepare: true });
+    const product = await client.execute(queryGetProduct, [store_id, product_id], { prepare: true });
     if (product.rows[0].stock < quantity) {
       return res.status(400).json({ error: 'Not enough stock' });
     }
     const unit_price = product.rows[0].price;
     const total_amount = unit_price * quantity;
     const newStock = product.rows[0].stock - quantity;
-    await client.execute(queryInsertSale, [saleId, saleDate, storeId, productId, quantity, unit_price, total_amount], { prepare: true });
-    await client.execute(queryUpdateProduct, [newStock, storeId, productId], { prepare: true });
+    await client.execute(queryInsertSale, [saleId, sale_date, store_id, product_id, quantity, unit_price, total_amount], { prepare: true });
+    await client.execute(queryUpdateProduct, [newStock, store_id, product_id], { prepare: true });
     res.json({ message: 'Sale added successfully' });
   } catch (error: any) {
+    console.log('Error',error);
     res.status(500).json({ error: error.message });
   }
 });
