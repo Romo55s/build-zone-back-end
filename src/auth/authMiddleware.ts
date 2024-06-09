@@ -83,7 +83,6 @@ const authorize = (requiredRoles: string[]) => {
       if (user.role === "manager") {
         const store_id = user.store_id;
         // If store_id is not provided, deny access
-        console.log(store_id);
         if (!store_id) {
           return res.status(403).json({ error: "Store ID is required" });
         }

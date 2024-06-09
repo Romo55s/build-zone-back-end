@@ -145,7 +145,7 @@ router.get(
   async (req, res) => {
     try {
       const { productId } = req.params;
-      const query = "SELECT * FROM productstore WHERE product_id = ?";
+      const query = "SELECT * FROM productstore WHERE product_id = ? ALLOW FILTERING";
       const result = await client.execute(query, [productId], {
         prepare: true,
       });
@@ -156,6 +156,7 @@ router.get(
 
       res.json(result.rows[0]);
     } catch (error: any) {
+      console.log("Error", error);
       res.status(500).json({ error: error.message });
     }
   }
