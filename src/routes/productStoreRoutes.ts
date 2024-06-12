@@ -4,21 +4,21 @@ import { authMiddleware, authorize } from "../auth/authMiddleware";
 import authService from "../auth/authService";
 import { ProductStore } from "../models/productStoreModel";
 import { types } from "cassandra-driver";
-import { google } from 'googleapis';
-import multer from 'multer';
-import googleConfig from '../config/googleConfig';
-import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { google } from "googleapis";
+import multer from "multer";
+import googleConfig from "../config/googleConfig";
+import fs from "fs";
+import { v4 as uuidv4 } from "uuid";
 
 type Row = types.Row;
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: "uploads/" });
 
 const router = express.Router();
 const drive = google.drive({
-  version: 'v3',
-  auth: googleConfig
+  version: "v3",
+  auth: googleConfig,
 });
-console.log('googleConfig:', googleConfig);
+console.log("googleConfig:", googleConfig);
 router.get(
   "/getByStoreId/:storeId",
   authMiddleware,
@@ -47,44 +47,66 @@ router.get(
 );
 
 // Agregar un producto con una imagen
-router.post('/add', upload.single('image'), async (req, res) => {
-  const { name, price, category, stock, supplier, storeId } = req.body;
-  const image = req.file;
+router.post(
+  "/add",
+  upload.single("image"),
+  authorize(["admin", "manager"]),
+  async (req, res) => {
+    const { product_name, price, category, stock, supplier, store_id } = req.body; // Cambiado aquí
+    const image = req.file;
+    
+    if (
+      !product_name || // Cambiado aquí
+      !price ||
+      !image ||
+      !category ||
+      !stock ||
+      !supplier ||
+      !store_id // Cambiado aquí
+    ) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
 
-  if (!name || !price || !image || !category || !stock || !supplier || !storeId) {
-    return res.status(400).json({ error: 'All fields are required' });
+    console.log("req.body:", req.body);
+    try {
+      const response = await drive.files.create({
+        requestBody: {
+          name: product_name,
+          parents: ["1c0FJs_H5rOOB0L8oMCJc0fMQSQ8-VuKm"],
+        },
+        media: {
+          mimeType: image.mimetype,
+          body: fs.createReadStream(image.path),
+        },
+      });
+
+      const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
+
+      const product_id = uuidv4();
+      const query =
+        "INSERT INTO productstore (store_id, product_id, category, image, price, product_name, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+      await client.execute(
+        query,
+        [store_id, product_id, category, imageUrl, price, product_name, stock, supplier],
+        { prepare: true }
+      );
+      console.log("Res", res);
+      res
+        .status(201)
+        .json({ message: "Product created successfully", imageUrl });
+    } catch (error: any) {
+      console.log("Error", error);
+      res.status(500).json({ error: error.message });
+    }
   }
-
-  try {
-    const response = await drive.files.create({
-      requestBody: {
-        name: image.originalname,
-        parents: ['1c0FJs_H5rOOB0L8oMCJc0fMQSQ8-VuKm']
-      },
-      media: {
-        mimeType: image.mimetype,
-        body: fs.createReadStream(image.path)
-      }
-    });
-
-    const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
-
-    const productId = uuidv4();
-    const query = "INSERT INTO productstore (store_id, product_id, category, image, price, product_name, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    await client.execute(query, [storeId, productId, category, imageUrl, price, name, stock, supplier], { prepare: true });
-
-    res.status(201).json({ message: 'Product created successfully', imageUrl });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+);
 
 // Actualizar un producto existente en la tienda
 router.put(
   "/update/:productId",
   authMiddleware,
   authorize(["admin", "manager"]),
-  upload.single('image'),
+  upload.single("image"),
   async (req, res) => {
     try {
       const { productId } = req.params;
@@ -98,12 +120,12 @@ router.put(
       const response = await drive.files.create({
         requestBody: {
           name: image.originalname,
-          parents: ['1c0FJs_H5rOOB0L8oMCJc0fMQSQ8-VuKm']
+          parents: ["1c0FJs_H5rOOB0L8oMCJc0fMQSQ8-VuKm"],
         },
         media: {
           mimeType: image.mimetype,
-          body: fs.createReadStream(image.path)
-        }
+          body: fs.createReadStream(image.path),
+        },
       });
       const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
       const query =
@@ -131,11 +153,13 @@ router.delete(
 
       // Obtener el enlace de la imagen del producto de la base de datos
       const queryGet = "SELECT image FROM productstore WHERE product_id = ?";
-      const result = await client.execute(queryGet, [productId], { prepare: true });
-      const imageUrl = result.rows[0].get('image');
+      const result = await client.execute(queryGet, [productId], {
+        prepare: true,
+      });
+      const imageUrl = result.rows[0].get("image");
 
       // Extraer el ID de la imagen de Google Drive del enlace
-      const imageId = imageUrl.split('=')[1];
+      const imageId = imageUrl.split("=")[1];
 
       // Eliminar la imagen de Google Drive
       await drive.files.delete({ fileId: imageId });
@@ -151,7 +175,6 @@ router.delete(
   }
 );
 
-
 router.get(
   "/getById/:productId",
   authMiddleware,
@@ -159,7 +182,8 @@ router.get(
   async (req, res) => {
     try {
       const { productId } = req.params;
-      const query = "SELECT * FROM productstore WHERE product_id = ? ALLOW FILTERING";
+      const query =
+        "SELECT * FROM productstore WHERE product_id = ? ALLOW FILTERING";
       const result = await client.execute(query, [productId], {
         prepare: true,
       });
@@ -176,15 +200,19 @@ router.get(
   }
 );
 
-router.get("/all", authMiddleware, authorize(["admin", "manager"]), async (req, res) => {
-  try {
-    const query = "SELECT * FROM productstore";
-    const result = await client.execute(query, [], { prepare: true });
-    res.json(result.rows);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+router.get(
+  "/all",
+  authMiddleware,
+  authorize(["admin", "manager"]),
+  async (req, res) => {
+    try {
+      const query = "SELECT * FROM productstore";
+      const result = await client.execute(query, [], { prepare: true });
+      res.json(result.rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
   }
-
-});
+);
 
 export default router;

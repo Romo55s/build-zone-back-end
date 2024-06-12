@@ -12,7 +12,7 @@ import cors from 'cors';
 
 dotenv.config();
 const app = express();
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
   origin: 'http://localhost:4200',
@@ -26,6 +26,7 @@ app.use('/user', userRoutes);
 app.use('/store', storeRoutes);
 app.use('/sales', salesRoutes);
 app.use('/products', productRoutes);
+
 
 app.get('/', (req, res) => {
   res.send('Welcome to Build-zone API');
