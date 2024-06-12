@@ -12,6 +12,10 @@ import cors from 'cors';
 
 dotenv.config();
 const app = express();
+
+// Middleware for handling file uploads should be set up before body-parser
+
+// Use body-parser globally after multer routes
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
@@ -20,13 +24,14 @@ app.use(cors({
 }));
 app.use(authMiddleware);
 
-// Routes
+// Apply body-parser after multer routes
 app.use('/auth', authRoutes);
-app.use('/user', userRoutes);    
+app.use('/user', userRoutes);
 app.use('/store', storeRoutes);
 app.use('/sales', salesRoutes);
 app.use('/products', productRoutes);
 
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (req, res) => {
   res.send('Welcome to Build-zone API');

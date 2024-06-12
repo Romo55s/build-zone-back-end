@@ -11,7 +11,10 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
 type Row = types.Row;
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 }, // Aumenta el límite a 50MB
+});
 
 const router = express.Router();
 const drive = google.drive({
@@ -47,59 +50,37 @@ router.get(
 );
 
 // Agregar un producto con una imagen
-router.post(
-  "/add",
-  upload.single("image"),
-  authorize(["admin", "manager"]),
-  async (req, res) => {
-    const { product_name, price, category, stock, supplier, store_id } = req.body; // Cambiado aquí
+router.post('/add', upload.single('image'), async (req, res) => {
+  try {
+    const product = JSON.parse(req.body.product);
     const image = req.file;
-    
-    if (
-      !product_name || // Cambiado aquí
-      !price ||
-      !image ||
-      !category ||
-      !stock ||
-      !supplier ||
-      !store_id // Cambiado aquí
-    ) {
-      return res.status(400).json({ error: "All fields are required" });
+
+    if (!image) {
+      throw new Error("La imagen es requerida.");
     }
 
-    console.log("req.body:", req.body);
-    try {
-      const response = await drive.files.create({
-        requestBody: {
-          name: product_name,
-          parents: ["1c0FJs_H5rOOB0L8oMCJc0fMQSQ8-VuKm"],
-        },
-        media: {
-          mimeType: image.mimetype,
-          body: fs.createReadStream(image.path),
-        },
-      });
+    const response = await drive.files.create({
+      requestBody: {
+        name: image.originalname,
+        parents: ["1c0FJs_H5rOOB0L8oMCJc0fMQSQ8-VuKm"],
+      },
+      media: {
+        mimeType: image.mimetype,
+        body: fs.createReadStream(image.path),
+      },
+    });
 
-      const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
+    const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
 
-      const product_id = uuidv4();
-      const query =
-        "INSERT INTO productstore (store_id, product_id, category, image, price, product_name, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-      await client.execute(
-        query,
-        [store_id, product_id, category, imageUrl, price, product_name, stock, supplier],
-        { prepare: true }
-      );
-      console.log("Res", res);
-      res
-        .status(201)
-        .json({ message: "Product created successfully", imageUrl });
-    } catch (error: any) {
-      console.log("Error", error);
-      res.status(500).json({ error: error.message });
-    }
+    const query = "INSERT INTO productstore (product_id, store_id, product_name, category, image, price, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    await client.execute(query, [uuidv4(), product.store_id, product.product_name, product.category, imageUrl, product.price, product.stock, product.supplier], { prepare: true });
+
+    res.send("Producto agregado exitosamente.");
+  } catch (error: any) {
+    console.log("Error", error);
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
 // Actualizar un producto existente en la tienda
 router.put(
