@@ -4,7 +4,7 @@ export interface ProductStore {
   product_name: string;
   category: string;
   price: number;
-  image: string;
+  image: File;
   stock: number;
   supplier: string;
 }

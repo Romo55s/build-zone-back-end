@@ -50,10 +50,13 @@ router.get(
 );
 
 // Agregar un producto con una imagen
-router.post('/add', upload.single('image'), async (req, res) => {
+router.post('/add', upload.single('image') , async (req, res) => {
+  console.log("req.body", req.body);
   try {
-    const product = JSON.parse(req.body.product);
+    const { store_id, product_name, category, price, stock, supplier } = req.body;
     const image = req.file;
+    console.log(store_id);
+    console.log(req.body);
 
     if (!image) {
       throw new Error("La imagen es requerida.");
@@ -71,9 +74,9 @@ router.post('/add', upload.single('image'), async (req, res) => {
     });
 
     const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
-
+    console.log(store_id);
     const query = "INSERT INTO productstore (product_id, store_id, product_name, category, image, price, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    await client.execute(query, [uuidv4(), product.store_id, product.product_name, product.category, imageUrl, product.price, product.stock, product.supplier], { prepare: true });
+    await client.execute(query, [uuidv4(), store_id, product_name, category, imageUrl, price, stock, supplier], { prepare: true });
 
     res.send("Producto agregado exitosamente.");
   } catch (error: any) {

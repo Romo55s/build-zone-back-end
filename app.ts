@@ -13,10 +13,6 @@ import cors from 'cors';
 dotenv.config();
 const app = express();
 
-// Middleware for handling file uploads should be set up before body-parser
-
-// Use body-parser globally after multer routes
-app.use(bodyParser.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
   origin: 'http://localhost:4200',
