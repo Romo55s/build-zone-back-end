@@ -94,13 +94,24 @@ router.put(
   async (req, res) => {
     try {
       const { productId } = req.params;
-      const { category, price, product_name, stock, supplier } = req.body;
+      const { category, price, product_name, stock, supplier, store_id } = req.body;
       const image = req.file;
 
       if (!image) {
         throw new Error("La imagen es requerida.");
       }
 
+      // Obtener el enlace de la imagen del producto existente de la base de datos
+      const queryGet = "SELECT image FROM productstore WHERE product_id = ? AND store_id = ?";
+      const result = await client.execute(queryGet, [productId, store_id], {
+        prepare: true,
+      });
+      const oldImageUrl = result.rows[0].get("image");
+
+      // Extraer el ID de la imagen de Google Drive del enlace
+      const oldImageId = oldImageUrl.split("=")[1];
+
+      // Subir la nueva imagen a Google Drive
       const response = await drive.files.create({
         requestBody: {
           name: image.originalname,
@@ -112,15 +123,23 @@ router.put(
         },
       });
       const imageUrl = `https://drive.google.com/thumbnail?id=${response.data.id}`;
-      const query =
-        "UPDATE productstore SET category = ?, image = ?, price = ?, product_name = ?, stock = ?, supplier = ? WHERE product_id = ?";
-      await client.execute(
-        query,
-        [category, imageUrl, price, product_name, stock, supplier, productId],
-        { prepare: true }
-      );
+
+      // Si la imagen ha cambiado, eliminar la imagen existente de Google Drive
+      if (oldImageId !== response.data.id) {
+        await drive.files.delete({ fileId: oldImageId });
+      }
+
+      // Primero, elimina el registro existente
+      const deleteQuery = "DELETE FROM productstore WHERE store_id = ? AND product_id = ?";
+      await client.execute(deleteQuery, [store_id, productId], { prepare: true });
+
+      // Luego, inserta un nuevo registro con los nuevos valores
+      const insertQuery = "INSERT INTO productstore (store_id, product_id, category, image, price, product_name, stock, supplier) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+      await client.execute(insertQuery, [store_id, productId, category, imageUrl, price, product_name, stock, supplier], { prepare: true });
+
       res.send("Producto actualizado exitosamente.");
     } catch (error: any) {
+      console.log("Error", error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -128,32 +147,38 @@ router.put(
 
 // Eliminar un producto
 router.delete(
-  "/delete/:productId",
+  "/delete/:productId/:storeId",
   authMiddleware,
   authorize(["admin", "manager"]),
   async (req, res) => {
     try {
-      const { productId } = req.params;
+      const { productId, storeId } = req.params;
 
       // Obtener el enlace de la imagen del producto de la base de datos
-      const queryGet = "SELECT image FROM productstore WHERE product_id = ?";
-      const result = await client.execute(queryGet, [productId], {
+      const queryGet = "SELECT image FROM productstore WHERE product_id = ? AND store_id = ?";
+      const result = await client.execute(queryGet, [productId, storeId], {
         prepare: true,
       });
       const imageUrl = result.rows[0].get("image");
 
       // Extraer el ID de la imagen de Google Drive del enlace
       const imageId = imageUrl.split("=")[1];
-
+      console.log("imageId", imageId);
       // Eliminar la imagen de Google Drive
-      await drive.files.delete({ fileId: imageId });
+      const response = await drive.files.delete({ fileId: imageId });
+      if (response.status === 204) {
+        console.log("Imagen eliminada de Google Drive");
+      } else {
+        throw new Error("Error al eliminar la imagen de Google Drive");
+      }
 
       // Eliminar el producto de la base de datos
-      const queryDelete = "DELETE FROM productstore WHERE product_id = ?";
-      await client.execute(queryDelete, [productId], { prepare: true });
+      const queryDelete = "DELETE FROM productstore WHERE product_id = ? AND store_id = ?";
+      await client.execute(queryDelete, [productId, storeId], { prepare: true });
 
       res.send("Producto eliminado exitosamente");
     } catch (error: any) {
+      console.log("Error", error);
       res.status(500).json({ error: error.message });
     }
   }

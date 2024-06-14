@@ -20,6 +20,8 @@ app.use(cors({
 }));
 app.use(authMiddleware);
 
+app.use(bodyParser.json());
+
 // Apply body-parser after multer routes
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
@@ -27,7 +29,6 @@ app.use('/store', storeRoutes);
 app.use('/sales', salesRoutes);
 app.use('/products', productRoutes);
 
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (req, res) => {
   res.send('Welcome to Build-zone API');

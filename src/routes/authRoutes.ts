@@ -38,6 +38,7 @@ router.post(
         res.status(result.status).json({ message: result.message });
       }
     } catch (error: unknown) {
+      console.log("error:", error);
       next(error);
     }
   }
