@@ -82,6 +82,40 @@ router.get(
   }
 );
 
+// Obtener todos los usuarios
+router.get("/allusers", authMiddleware, authorize(["admin"]), async (req, res) => {
+  const query = "SELECT * FROM users WHERE role = 'manager' ALLOW FILTERING";
+  try {
+    const result = await client.execute(query, [], { prepare: true });
+    //console.log(result);
+    res.status(200).json(result.rows);
+  } catch (error: any) {
+    //console.log(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//Usuario por storeId
+router.get(
+  "/usersByStoreId/:storeId",
+  authMiddleware,
+  authorize(["admin"]),
+  async (req, res) => {
+    const query = "SELECT * FROM users WHERE store_id = ? ALLOW FILTERING";
+    try {
+      const result = await client.execute(query, [req.params.storeId], {
+        prepare: true,
+      });
+      //console.log(result)
+      res.status(200).json(result.rows);
+    } catch (error: any) {
+      //console.log(error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+
 // Actualizar un usuario
 router.put(
   "/update/:userId",
