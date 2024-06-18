@@ -19,6 +19,11 @@ app.use(authMiddleware);
 
 app.use(bodyParser.json());
 
+app.use(cors({
+  origin: ['http://localhost:4200', 'https://build-zone-front-end.onrender.com'],
+  credentials: true
+}));
+
 // Apply body-parser after multer routes
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
@@ -30,11 +35,6 @@ app.use('/products', productRoutes);
 app.get('/', (req, res) => {
   res.send('Welcome to Build-zone API');
 });
-
-app.use(cors({
-  origin: ['http://localhost:4200', 'https://build-zone-front-end.onrender.com'],
-  credentials: true
-}));
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
