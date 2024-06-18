@@ -60,7 +60,7 @@ router.post('/add', authMiddleware, authorize(['admin', 'manager']), async (req,
     const newStock = product.rows[0].stock - quantity;
     await client.execute(queryInsertSale, [saleId, sale_date, store_id, product_id, quantity, unit_price, total_amount], { prepare: true });
     await client.execute(queryUpdateProduct, [newStock, store_id, product_id], { prepare: true });
-    res.json({ message: 'Sale added successfully' });
+    res.json({ message: 'Sale added successfully', sale_id: saleId  });
   } catch (error: any) {
     console.log('Error',error);
     res.status(500).json({ error: error.message });
