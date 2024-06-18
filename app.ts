@@ -9,6 +9,7 @@ import { authMiddleware } from './src/auth/authMiddleware';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+require('events').EventEmitter.defaultMaxListeners = 20;
 
 dotenv.config();
 const app = express();
