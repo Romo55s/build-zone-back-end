@@ -2,6 +2,7 @@
   "name": "build-zone",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "server.ts",
   "scripts": {
     "start": "node --max_old_space_size=400 server.ts --production",
