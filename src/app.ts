@@ -14,15 +14,15 @@ require('events').EventEmitter.defaultMaxListeners = 20;
 dotenv.config();
 const app = express();
 
-app.use(cookieParser());
-app.use(authMiddleware);
-
-app.use(bodyParser.json());
-
 app.use(cors({
   origin: ['http://localhost:4200', 'https://build-zone-front-end.onrender.com'],
   credentials: true
 }));
+
+app.use(cookieParser());
+app.use(authMiddleware);
+
+app.use(bodyParser.json());
 
 // Apply body-parser after multer routes
 app.use('/auth', authRoutes);
@@ -30,7 +30,6 @@ app.use('/user', userRoutes);
 app.use('/store', storeRoutes);
 app.use('/sales', salesRoutes);
 app.use('/products', productRoutes);
-
 
 app.get('/', (req, res) => {
   res.send('Welcome to Build-zone API');
