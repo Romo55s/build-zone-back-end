@@ -1,11 +1,11 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import authRoutes from './src/routes/authRoutes';
-import storeRoutes from './src/routes/storeRoutes';
-import salesRoutes from './src/routes/salesRoutes';
-import userRoutes from './src/routes/userRoutes';
-import productRoutes from './src/routes/productStoreRoutes';
-import { authMiddleware } from './src/auth/authMiddleware';
+import authRoutes from './routes/authRoutes';
+import storeRoutes from './routes/storeRoutes';
+import salesRoutes from './routes/salesRoutes';
+import userRoutes from './routes/userRoutes';
+import productRoutes from './routes/productStoreRoutes';
+import { authMiddleware } from './auth/authMiddleware';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
