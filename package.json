@@ -5,7 +5,8 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "start": "node --max_old_space_size=400 server.ts --production",
+    "start": "node --max_old_space_size=400 dist/server.js --production",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -30,9 +31,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5",
-    "uuid": "^9.0.1",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -44,6 +44,7 @@
     "@types/multer": "^1.4.11",
     "@types/uuid": "^9.0.8",
     "nodemon": "^3.1.0",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
   }
 }
